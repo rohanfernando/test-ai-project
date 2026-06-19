@@ -1,4 +1,4 @@
-```tsx
+```typescript
 import React, { useState } from 'react';
 
 // --- KPI Card Component ---
@@ -6,26 +6,32 @@ interface KpiCardProps {
   title: string;
   value: string;
   change?: string;
-  changeType?: 'positive' | 'negative';
+  changeType?: 'increase' | 'decrease';
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeType }) => {
-  const changeClasses = changeType === 'positive'
-    ? 'text-green-500'
-    : changeType === 'negative'
-      ? 'text-red-500'
-      : 'text-gray-500';
+  const getChangeStyles = () => {
+    if (!change) return '';
+    switch (changeType) {
+      case 'increase':
+        return 'text-green-500';
+      case 'decrease':
+        return 'text-red-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center transition-colors duration-300">
-      <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-2 uppercase tracking-wider">
-        {title}
-      </h3>
-      <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{value}</p>
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-between h-full">
+      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{title}</h3>
+      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
       {change && (
-        <p className={`text-sm font-semibold ${changeClasses}`}>
+        <div className={`text-sm font-medium ${getChangeStyles()}`}>
+          {changeType === 'increase' && '+'}
+          {changeType === 'decrease' && '-'}
           {change}
-        </p>
+        </div>
       )}
     </div>
   );
@@ -34,21 +40,19 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeType }) =
 // --- Activity Feed Item Component ---
 interface ActivityFeedItemProps {
   icon: React.ReactNode;
-  title: string;
-  description: string;
+  text: string;
   time: string;
 }
 
-const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ icon, title, description, time }) => {
+const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ icon, text, time }) => {
   return (
-    <div className="flex items-start p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 space-x-4 transition-colors duration-300">
-      <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-700 p-3 rounded-full text-gray-700 dark:text-gray-300">
+    <div className="flex items-start py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full mr-4">
         {icon}
       </div>
       <div className="flex-grow">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-1">{title}</h4>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{description}</p>
-        <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
+        <p className="text-gray-800 dark:text-gray-200 mb-1">{text}</p>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{time}</span>
       </div>
     </div>
   );
@@ -56,72 +60,87 @@ const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ icon, title, descri
 
 // --- Dashboard Page Component ---
 const Dashboard: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(
+    localStorage.getItem('theme') === 'dark' ||
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   };
 
+  // Set initial mode based on localStorage or system preference
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900 p-6 md:p-10`}>
-      <header className="flex justify-between items-center mb-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 md:p-10">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <button
           onClick={toggleDarkMode}
-          className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-300"
+          className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {darkMode ? 'Light Mode' : 'Dark Mode'}
+          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
         </button>
-      </header>
+      </div>
 
       {/* KPI Card Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KpiCard title="Revenue" value="$12,345" change="+5.2%" changeType="positive" />
-        <KpiCard title="New Customers" value="567" change="-1.1%" changeType="negative" />
-        <KpiCard title="Orders" value="1,209" change="+10.5%" changeType="positive" />
-        <KpiCard title="Average Order Value" value="$108.75" change="0.0%" />
-      </section>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <KpiCard title="Total Revenue" value="$125,678" change="+$4,500" changeType="increase" />
+        <KpiCard title="New Customers" value="1,234" change="+15%" changeType="increase" />
+        <KpiCard title="Orders This Month" value="567" change="-3%" changeType="decrease" />
+        <KpiCard title="Average Order Value" value="$221.65" />
+      </div>
 
-      {/* Activity Feed and potentially other content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Activity Feed</h2>
-          <div className="-mx-6"> {/* Allow padding to reset for full-width items */}
+      {/* Activity Feed and potentially other sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-5">Recent Activity</h2>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-              title="New User Registered"
-              description="A new user with email example@domain.com signed up."
-              time="2 minutes ago"
+              icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0h6m-6 0-6 6"></path></svg>}
+              text="New user registered: Jane Doe"
+              time="10:30 AM"
             />
             <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-3.414a2 2 0 10-2.828-2.828L11 12.828 15.828 17.75z" /></svg>}
-              title="Order Placed"
-              description="Order #12345 for $150.99 has been successfully placed."
-              time="15 minutes ago"
+              icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 16v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h10a3 3 0 013 3v1"></path></svg>}
+              text="Order #12345 fulfilled"
+              time="9:15 AM"
             />
             <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4 L19 7" /></svg>}
-              title="Task Completed"
-              description="The 'Refactor authentication' task was marked as complete."
-              time="1 hour ago"
+              icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903 3 3 0 111.346 5.962M7 16a4 4 0 014.797-4.797 3 3 0 015.455-1.568m-1.11 4.676a3 3 0 01-2.111-2.111M10 8h4"></path></svg>}
+              text="Product 'Awesome Widget' restocked"
+              time="Yesterday"
             />
              <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4-4 4v-4H9a2 2 0 01-2-2V10a2 2 0 012-2h8l1-1z" /></svg>}
-              title="New Message Received"
-              description="You have received a new message from John Doe."
-              time="3 hours ago"
+              icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l7-7 3 3-7 7-3-3z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12l7-7 3 3-7 7-3-3z"></path></svg>}
+              text="New feature deployed: Advanced Search"
+              time="2 days ago"
             />
           </div>
-        </section>
+        </div>
 
-        {/* Placeholder for another section if needed, e.g., a chart or statistics */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300 flex items-center justify-center">
-          <div className="text-center text-gray-500 dark:text-gray-400">
-            <p>Additional Content Area</p>
-            <p className="text-sm">This space can be used for charts, summaries, or other widgets.</p>
+        {/* Placeholder for another section (e.g., charts, tasks) */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-5">Quick Overview</h2>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500 dark:text-gray-400">Chart or other widget goes here.</p>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
