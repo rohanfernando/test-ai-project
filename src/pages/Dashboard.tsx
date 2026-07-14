@@ -1,29 +1,38 @@
-```tsx
+```typescript
 import React, { useState } from 'react';
 
-// --- KPI Card Component ---
+// --- Types ---
 interface KpiCardProps {
   title: string;
   value: string;
-  change?: string;
-  changeType?: 'positive' | 'negative';
+  change?: string; // e.g., "+1.2%"
+  changeType?: 'increase' | 'decrease';
 }
 
+interface ActivityFeedItem {
+  id: string;
+  avatarUrl: string;
+  name: string;
+  action: string;
+  timestamp: string;
+}
+
+// --- Sub-components ---
+
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeType }) => {
-  const changeClasses = changeType === 'positive'
-    ? 'text-green-500'
-    : changeType === 'negative'
+  const changeClasses =
+    changeType === 'increase'
+      ? 'text-green-500'
+      : changeType === 'decrease'
       ? 'text-red-500'
       : 'text-gray-500';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center transition-colors duration-300">
-      <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-2 uppercase tracking-wider">
-        {title}
-      </h3>
-      <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{value}</p>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
+      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{title}</h3>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{value}</p>
       {change && (
-        <p className={`text-sm font-semibold ${changeClasses}`}>
+        <p className={`text-sm font-medium ${changeClasses}`}>
           {change}
         </p>
       )}
@@ -31,30 +40,37 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeType }) =
   );
 };
 
-// --- Activity Feed Item Component ---
-interface ActivityFeedItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  time: string;
-}
-
-const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ icon, title, description, time }) => {
+const ActivityFeedItem: React.FC<ActivityFeedItem> = ({ avatarUrl, name, action, timestamp }) => {
   return (
-    <div className="flex items-start p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 space-x-4 transition-colors duration-300">
-      <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-700 p-3 rounded-full text-gray-700 dark:text-gray-300">
-        {icon}
-      </div>
-      <div className="flex-grow">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-1">{title}</h4>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{description}</p>
-        <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
+    <div className="flex items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+      <img src={avatarUrl} alt={`${name}'s avatar`} className="w-10 h-10 rounded-full mr-4" />
+      <div>
+        <p className="text-gray-800 dark:text-gray-200">
+          <span className="font-semibold">{name}</span> {action}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{timestamp}</p>
       </div>
     </div>
   );
 };
 
-// --- Dashboard Page Component ---
+// --- Mock Data ---
+const mockKpiData: KpiCardProps[] = [
+  { title: 'Total Revenue', value: '$150,500', change: '+5.2%', changeType: 'increase' },
+  { title: 'New Customers', value: '1,250', change: '+10.5%', changeType: 'increase' },
+  { title: 'Conversion Rate', value: '4.7%', change: '-0.3%', changeType: 'decrease' },
+  { title: 'Average Order Value', value: '$120.40', change: '+2.1%', changeType: 'increase' },
+];
+
+const mockActivityFeed: ActivityFeedItem[] = [
+  { id: '1', avatarUrl: 'https://via.placeholder.com/40/FF5733/FFFFFF', name: 'Alice Johnson', action: 'added a new project.', timestamp: '2 hours ago' },
+  { id: '2', avatarUrl: 'https://via.placeholder.com/40/33FF57/FFFFFF', name: 'Bob Williams', action: 'commented on the task.', timestamp: '5 hours ago' },
+  { id: '3', avatarUrl: 'https://via.placeholder.com/40/3357FF/FFFFFF', name: 'Charlie Brown', action: 'completed the report.', timestamp: 'Yesterday' },
+  { id: '4', avatarUrl: 'https://via.placeholder.com/40/FF33A1/FFFFFF', name: 'Diana Prince', action: 'updated user permissions.', timestamp: '2 days ago' },
+];
+
+// --- Main Component ---
+
 const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
@@ -64,65 +80,45 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900 p-6 md:p-10`}>
+    <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-gray-100 dark:bg-gray-900 p-6`}>
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <button
           onClick={toggleDarkMode}
-          className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-300"
+          className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          {darkMode ? 'Light Mode' : 'Dark Mode'}
+          {darkMode ? (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293a8 8 0 01-11.487 0l.001-.002a8 8 0 000 11.485l.001.002a8 8 0 0111.485 0l.001-.002zM20 9.5c0-.966-.055-1.92-.16-2.85-.342-2.504-1.604-4.662-3.474-6.532a10.923 10.923 0 00-2.987-2.689c.737.002 1.473.001 2.209.001zM17.59 4.794C12.952 7.836 10 11.254 10 15c0 2.846 1.038 5.577 2.907 7.828l.001.002a8 8 0 00-8.539 0l.001-.002A10.923 10.923 0 004.002 4.794 10.923 10.923 0 000 2 10 10 0 1117.59 4.794zM10 20a10 10 0 100-20 10 10 0 000 20z"></path></svg>
+          ) : (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2V1A10 10 0 001.602 15.79a10 10 0 001.602 2.026 10 10 0 0012.797-1.067A10 10 0 007.196 1.001z"></path></svg>
+          )}
         </button>
       </header>
 
-      {/* KPI Card Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KpiCard title="Revenue" value="$12,345" change="+5.2%" changeType="positive" />
-        <KpiCard title="New Customers" value="567" change="-1.1%" changeType="negative" />
-        <KpiCard title="Orders" value="1,209" change="+10.5%" changeType="positive" />
-        <KpiCard title="Average Order Value" value="$108.75" change="0.0%" />
-      </section>
+      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {mockKpiData.map((kpi) => (
+          <KpiCard key={kpi.title} {...kpi} />
+        ))}
+      </main>
 
-      {/* Activity Feed and potentially other content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 lg:col-span-2">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Activity Feed</h2>
-          <div className="-mx-6"> {/* Allow padding to reset for full-width items */}
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-              title="New User Registered"
-              description="A new user with email example@domain.com signed up."
-              time="2 minutes ago"
-            />
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-3.414a2 2 0 10-2.828-2.828L11 12.828 15.828 17.75z" /></svg>}
-              title="Order Placed"
-              description="Order #12345 for $150.99 has been successfully placed."
-              time="15 minutes ago"
-            />
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4 L19 7" /></svg>}
-              title="Task Completed"
-              description="The 'Refactor authentication' task was marked as complete."
-              time="1 hour ago"
-            />
-             <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4-4 4v-4H9a2 2 0 01-2-2V10a2 2 0 012-2h8l1-1z" /></svg>}
-              title="New Message Received"
-              description="You have received a new message from John Doe."
-              time="3 hours ago"
-            />
+          <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-700 dark:scrollbar-thumb-gray-700 dark:scrollbar-track-gray-800">
+            {mockActivityFeed.map((item) => (
+              <ActivityFeedItem key={item.id} {...item} />
+            ))}
           </div>
-        </section>
+        </div>
 
-        {/* Placeholder for another section if needed, e.g., a chart or statistics */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300 flex items-center justify-center">
-          <div className="text-center text-gray-500 dark:text-gray-400">
-            <p>Additional Content Area</p>
-            <p className="text-sm">This space can be used for charts, summaries, or other widgets.</p>
+        {/* Placeholder for another component if needed, e.g., a chart */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hidden lg:block">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Insights</h2>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500 dark:text-gray-400">Placeholder for charts or detailed stats</p>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 };
