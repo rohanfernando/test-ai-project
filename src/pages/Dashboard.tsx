@@ -1,127 +1,141 @@
 ```tsx
 import React, { useState } from 'react';
 
-// --- KPI Card Component ---
-interface KpiCardProps {
-  title: string;
-  value: string;
-  change?: string;
-  changeType?: 'positive' | 'negative';
+// --- Sub-components ---
+
+interface KPIValueProps {
+  value: string | number;
+  label: string;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeType }) => {
-  const changeClasses = changeType === 'positive'
-    ? 'text-green-500'
-    : changeType === 'negative'
-      ? 'text-red-500'
-      : 'text-gray-500';
+const KPIValue: React.FC<KPIValueProps> = ({ value, label }) => (
+  <div className="text-center">
+    <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
+    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
+  </div>
+);
 
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center transition-colors duration-300">
-      <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-2 uppercase tracking-wider">
-        {title}
-      </h3>
-      <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{value}</p>
-      {change && (
-        <p className={`text-sm font-semibold ${changeClasses}`}>
-          {change}
-        </p>
-      )}
-    </div>
-  );
-};
-
-// --- Activity Feed Item Component ---
-interface ActivityFeedItemProps {
+interface ActivityItemProps {
   icon: React.ReactNode;
   title: string;
   description: string;
   time: string;
 }
 
-const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({ icon, title, description, time }) => {
-  return (
-    <div className="flex items-start p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 space-x-4 transition-colors duration-300">
-      <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-700 p-3 rounded-full text-gray-700 dark:text-gray-300">
-        {icon}
-      </div>
-      <div className="flex-grow">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-1">{title}</h4>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{description}</p>
-        <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
-      </div>
+const ActivityItem: React.FC<ActivityItemProps> = ({ icon, title, description, time }) => (
+  <div className="flex items-center space-x-4">
+    <div className="flex-shrink-0">
+      {icon}
     </div>
-  );
-};
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{title}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{description}</p>
+    </div>
+    <div className="inline-flex items-center text-xs font-medium text-gray-500 dark:text-gray-400">
+      {time}
+    </div>
+  </div>
+);
 
-// --- Dashboard Page Component ---
+// --- Main Dashboard Component ---
+
 const Dashboard: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(
+    localStorage.getItem('theme') === 'dark' ||
+    (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+  React.useEffect(() => {
+    const root = window.document.documentElement;
+    const oldTheme = isDarkMode ? 'light' : 'dark';
+    root.classList.remove(oldTheme);
+    const newTheme = isDarkMode ? 'dark' : 'light';
+    root.classList.add(newTheme);
+    localStorage.setItem('theme', newTheme);
+  }, [isDarkMode]);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900 p-6 md:p-10`}>
-      <header className="flex justify-between items-center mb-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <button
-          onClick={toggleDarkMode}
-          className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-300"
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="px-4 py-2 rounded-md text-white font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          style={{ backgroundColor: isDarkMode ? '#4A5568' : '#6366F1' }} // Darker gray or Indigo
         >
-          {darkMode ? 'Light Mode' : 'Dark Mode'}
+          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
         </button>
-      </header>
+      </div>
 
-      {/* KPI Card Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KpiCard title="Revenue" value="$12,345" change="+5.2%" changeType="positive" />
-        <KpiCard title="New Customers" value="567" change="-1.1%" changeType="negative" />
-        <KpiCard title="Orders" value="1,209" change="+10.5%" changeType="positive" />
-        <KpiCard title="Average Order Value" value="$108.75" change="0.0%" />
-      </section>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* KPI Card 1 */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <KPIValue value="1,234" label="Total Users" />
+        </div>
+        {/* KPI Card 2 */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <KPIValue value="$56,789" label="Revenue" />
+        </div>
+        {/* KPI Card 3 */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <KPIValue value="98.7%" label="Conversion Rate" />
+        </div>
+        {/* KPI Card 4 */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <KPIValue value="321" label="New Orders" />
+        </div>
+      </div>
 
-      {/* Activity Feed and potentially other content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Activity Feed</h2>
-          <div className="-mx-6"> {/* Allow padding to reset for full-width items */}
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-              title="New User Registered"
-              description="A new user with email example@domain.com signed up."
-              time="2 minutes ago"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Feed - Col 1 */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Activity Feed</h2>
+          <div className="space-y-4">
+            <ActivityItem
+              icon={<div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2"><svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h1a2 2 0 002 2h1a2 2 0 002-2h1a2 2 0 002-2v-6a2 2 0 00-2-2H9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19v-6a2 2 0 00-2-2H13a2 2 0 00-2 2v6a2 2 0 002 2h1a2 2 0 002-2h1a2 2 0 002-2z"></path></svg></div>}
+              title="New Project Started"
+              description="Project Alpha has been initiated with a 30-day deadline."
+              time="2 min ago"
             />
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-3.414a2 2 0 10-2.828-2.828L11 12.828 15.828 17.75z" /></svg>}
-              title="Order Placed"
-              description="Order #12345 for $150.99 has been successfully placed."
-              time="15 minutes ago"
-            />
-            <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4 L19 7" /></svg>}
+            <ActivityItem
+              icon={<div className="bg-green-100 dark:bg-green-900 rounded-full p-2"><svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>}
               title="Task Completed"
-              description="The 'Refactor authentication' task was marked as complete."
+              description="Completed the user authentication module for Beta."
+              time="15 min ago"
+            />
+            <ActivityItem
+              icon={<div className="bg-yellow-100 dark:bg-yellow-900 rounded-full p-2"><svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v1.005l-1 .005a2 2 0 01-2 2H8a2 2 0 01-2-2l-.005-2a2 2 0 012-2h1V15a2 2 0 002-2h3a2 2 0 002 2v1a2 2 0 002 2h1a2 2 0 002-2v-.005a2 2 0 00-1-1.995H15m-1-2H14a2 2 0 00-2 2v1"></path></svg></div>}
+              title="Scheduled Meeting"
+              description="Meeting with the design team about UI improvements at 3 PM."
               time="1 hour ago"
             />
-             <ActivityFeedItem
-              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4-4 4v-4H9a2 2 0 01-2-2V10a2 2 0 012-2h8l1-1z" /></svg>}
-              title="New Message Received"
-              description="You have received a new message from John Doe."
+            <ActivityItem
+              icon={<div className="bg-red-100 dark:bg-red-900 rounded-full p-2"><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v10l9-11h-7z"></path></svg></div>}
+              title="System Alert"
+              description="High disk usage detected on server 3. Investigating."
               time="3 hours ago"
             />
           </div>
-        </section>
+        </div>
 
-        {/* Placeholder for another section if needed, e.g., a chart or statistics */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300 flex items-center justify-center">
-          <div className="text-center text-gray-500 dark:text-gray-400">
-            <p>Additional Content Area</p>
-            <p className="text-sm">This space can be used for charts, summaries, or other widgets.</p>
+        {/* Placeholder for other widgets or a smaller section - Col 2 */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-300">Active Users</span>
+              <span className="font-semibold text-gray-900 dark:text-white">542</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-300">Tasks Pending</span>
+              <span className="font-semibold text-gray-900 dark:text-white">18</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-300">Messages Unread</span>
+              <span className="font-semibold text-gray-900 dark:text-white">7</span>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
